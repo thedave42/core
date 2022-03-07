@@ -5,11 +5,13 @@ from typing import Any, cast
 
 import voluptuous as vol
 
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ENTITIES
+from homeassistant.const import CONF_DEVICE_CLASS, CONF_ENTITIES
 from homeassistant.helpers import helper_config_entry_flow, selector
 
 from . import DOMAIN
+from .binary_sensor import CONF_ALL
 
 
 def basic_group_options_schema(domain: str) -> vol.Schema:
@@ -30,6 +32,19 @@ def basic_group_config_schema(domain: str) -> vol.Schema:
     )
 
 
+BINARY_SENSOR_OPTIONS_SCHEMA = basic_group_options_schema("binary_sensor").extend(
+    {
+        vol.Required(CONF_ALL, default=False): selector.selector({"boolean": {}}),
+        vol.Optional(CONF_DEVICE_CLASS): selector.selector(
+            {"select": {"options": list(map(str, BinarySensorDeviceClass))}}
+        ),
+    }
+)
+
+BINARY_SENSOR_CONFIG_SCHEMA = vol.Schema(
+    {vol.Required("name"): selector.selector({"text": {}})}
+).extend(BINARY_SENSOR_OPTIONS_SCHEMA.schema)
+
 STEPS = {
     "init": vol.Schema(
         {
@@ -37,6 +52,7 @@ STEPS = {
                 {
                     "select": {
                         "options": [
+                            "binary_sensor",
                             "cover",
                             "fan",
                             "light",
@@ -47,10 +63,12 @@ STEPS = {
             )
         }
     ),
+    "binary_sensor": BINARY_SENSOR_CONFIG_SCHEMA,
     "cover": basic_group_config_schema("cover"),
     "fan": basic_group_config_schema("fan"),
     "light": basic_group_config_schema("light"),
     "media_player": basic_group_config_schema("media_player"),
+    "binary_sensor_options": BINARY_SENSOR_OPTIONS_SCHEMA,
     "cover_options": basic_group_options_schema("cover"),
     "fan_options": basic_group_options_schema("fan"),
     "light_options": basic_group_options_schema("light"),
